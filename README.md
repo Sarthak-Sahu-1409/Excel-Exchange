@@ -1,6 +1,3 @@
-Here is the improved Markdown code for your Excel Exchange setup guide and features section, formatted for clear readability without altering your content:
-
-```markdown
 ## Excel Exchange Setup Guide
 
 ### 🖥️ Windows Instructions
