@@ -200,12 +200,15 @@ class ExcelInterface(ABC):
     @abstractmethod
     def is_connected(self) -> bool: pass
 
+import pythoncom
+
 class XLWingsExcelInterface(ExcelInterface):
     def __init__(self):
         self.app: Optional[xw.App] = None
         self.book: Optional[xw.Book] = None
         self._last_connection_state = False
         self._last_active_book = None
+        self._thread_initialized = False
 
     def connect(self) -> bool:
         """Tries to connect to an existing Excel instance and set the active book."""
@@ -296,22 +299,61 @@ class XLWingsExcelInterface(ExcelInterface):
         """
         if not self.is_connected() or not self.app or not self.book:
             raise ExcelConnectionError("Excel is not connected to a workbook.")
+
         try:
-            prompt = "Please select the range of cells to convert."
-            title = "Select Range for Conversion"
-            address = self.app.api.InputBox(prompt, title, Type=8)
+            # Ensure Excel is in the foreground
+            self.app.activate()
             
-            if not address:
-                logger.warning("User cancelled the InputBox or selection was invalid.")
-                return None
-            
-            return self.book.sheets.active.range(address)
+            # Get the active sheet before showing InputBox
+            active_sheet = self.book.sheets.active
+            if not active_sheet:
+                raise ExcelConnectionError("No active sheet in workbook.")
+
+            # Show the InputBox and get range directly (instead of address)
+            try:
+                # Use Excel's InputBox to get range directly
+                xl_range = self.app.selection
+                prompt = "Please select the range of cells to convert."
+                title = "Select Range for Conversion"
+                xl_range = self.app.api.Application.InputBox(
+                    Prompt=prompt,
+                    Title=title,
+                    Type=8  # xlRange constant
+                )
+                
+                # Handle cancellation
+                if not xl_range:
+                    logger.info("User cancelled the range selection.")
+                    return None
+                
+                # If we got a valid range from InputBox, get its address and create a new Range object
+                if xl_range:
+                    # Get the address and sheet name from the COM range object
+                    try:
+                        address = xl_range.Address
+                        sheet = xl_range.Worksheet.Name
+                        # Create a new Range object using the public API
+                        range_obj = self.book.sheets[sheet].range(address)
+                        if range_obj and range_obj.address:
+                            return range_obj
+                    except Exception as e:
+                        logger.warning(f"Error converting Excel range: {e}")
+                        return None
+                else:
+                    logger.warning("Invalid range selection.")
+                    return None
+
+            except Exception as e:
+                if any(err in str(e).lower() for err in ['cancel', 'user-interrupted', '0x800a03ec']):
+                    logger.info("User cancelled the range selection.")
+                    return None
+                raise
+
         except Exception as e:
-            if "Cancel" in str(e) or "OLE error 0x800a03ec" in str(e):
-                logger.info("User cancelled the range selection InputBox.")
-                return None
-            logger.error(f"Error getting selection from InputBox: {e}", exc_info=True)
-            raise ExcelConnectionError(f"Failed to get selection from Excel: {e}")
+            logger.error(f"Error during range selection: {e}", exc_info=True)
+            if 'com_error' in str(type(e)).lower():
+                raise ExcelConnectionError("Excel communication error. Please try again.")
+            raise ExcelConnectionError(f"Failed to get selection: {str(e)}")
 
     def read_values(self, selection: xw.Range) -> List[List[Any]]:
         return selection.options(ndim=2).value
@@ -345,17 +387,31 @@ class XLWingsExcelInterface(ExcelInterface):
             return None
 
     def write_values(self, selection: xw.Range, values: List[List[Any]], mode: OutputMode) -> None:
-        target_range = None
-        if mode == OutputMode.OVERWRITE:
-            target_range = selection
-        elif mode == OutputMode.ADJACENT_COLUMN:
-            target_range = selection.offset(column_offset=selection.shape[1])
-        elif mode == OutputMode.NEW_SHEET:
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            new_sheet = self.book.sheets.add(f"Converted_{timestamp}", after=self.book.active_sheet)
-            target_range = new_sheet.range('A1')
-        if target_range:
+        """Write values to Excel. This should be called from the main thread."""
+        try:
+            # Get the target range based on the output mode
+            target_range = None
+            if mode == OutputMode.OVERWRITE:
+                target_range = selection
+            elif mode == OutputMode.ADJACENT_COLUMN:
+                target_range = selection.offset(column_offset=selection.shape[1])
+            elif mode == OutputMode.NEW_SHEET:
+                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                new_sheet = self.book.sheets.add(f"Converted_{timestamp}", after=self.book.active_sheet)
+                target_range = new_sheet.range('A1')
+            
+            if not target_range:
+                raise ValueError("No target range available for writing")
+
+            # Write the values
             target_range.options(expand='table').value = values
+            
+            # Log success
+            logger.info(f"Successfully wrote values to {target_range.address} in {target_range.sheet.name}")
+            
+        except Exception as e:
+            logger.error(f"Error writing values to Excel: {e}")
+            raise
 
 # ================================ CONVERSION LOGIC ===========================
 class CurrencyConverter:
@@ -669,21 +725,39 @@ class CurrencyConverterGUI:
                 messagebox.showwarning("No Workbook", "Please open or select a workbook first.")
                 return
 
+            # Try to activate Excel before selection
+            try:
+                self.converter.excel.app.activate()
+                # Give Excel a moment to come to foreground
+                self.root.after(100)
+                self.root.update()
+            except Exception as e:
+                logger.warning(f"Could not activate Excel window: {e}")
+
             # This call is blocking and will wait for user input in Excel
             selection = self.converter.excel.get_selection_from_inputbox()
             
             if selection:
-                self._process_selection(selection)
-                # Activate Excel window after selection
                 try:
-                    if self.converter.excel.app:
-                        self.converter.excel.app.activate()
-                except:
-                    pass
+                    self._process_selection(selection)
+                    self._log("Range selected successfully.", "success")
+                except Exception as e:
+                    messagebox.showerror("Processing Error", 
+                                       f"Selected range is valid but could not be processed.\n\nError: {str(e)}")
+                    self._log(f"Error processing selection: {e}", "error")
             else:
-                self._log("Range selection was cancelled by the user in Excel.", "warning")
+                self._log("Range selection was cancelled by the user.", "warning")
+
+        except ExcelConnectionError as e:
+            messagebox.showerror("Excel Error", str(e))
+            self._log(f"Excel connection error: {e}", "error")
         except Exception as e:
-            messagebox.showerror("Selection Error", f"Could not get the selection from Excel.\n\nError: {e}")
+            error_msg = str(e)
+            if "com_error" in error_msg.lower():
+                msg = "Lost connection to Excel. Please try again."
+            else:
+                msg = f"Could not get the selection from Excel.\n\nError: {error_msg}"
+            messagebox.showerror("Selection Error", msg)
             self._log(f"Error during interactive selection: {e}", "error")
 
     def _process_selection(self, selection: xw.Range):
@@ -847,19 +921,57 @@ class CurrencyConverterGUI:
             messagebox.showerror("Input Error", "Invalid precision value.")
 
     def _convert_excel(self, request: ConversionRequest):
-        def task():
-            self._set_ui_state(False)
+        def conversion_task(request):
+            """This runs in a background thread to do the conversion calculations"""
             try:
                 converted_data, stats = self.converter.convert_range(self.excel_values, request, self._update_progress)
-                write_success = False
                 if stats['converted'] > 0:
-                    output_mode = OutputMode(self.output_mode_var.get())
-                    self.converter.excel.write_values(self.current_selection, converted_data, output_mode)
-                    write_success = True
-                self.root.after(0, self._on_convert_complete, stats, write_success, None)
+                    # Schedule the Excel write operation on the main thread
+                    self.root.after(0, lambda: self._write_to_excel(converted_data, stats))
+                else:
+                    self.root.after(0, lambda: self._on_convert_complete(stats, True, None))
             except Exception as e:
-                self.root.after(0, self._on_convert_complete, {}, False, e)
-        threading.Thread(target=task, daemon=True).start()
+                self.root.after(0, lambda: self._on_convert_complete({}, False, e))
+
+        def start_conversion():
+            self._set_ui_state(False)
+            # Start the conversion in a background thread
+            thread = threading.Thread(target=lambda: conversion_task(request), daemon=True)
+            thread.start()
+
+        # Verify Excel connection on main thread before starting
+        if not self.converter.excel.connect():
+            messagebox.showerror("Excel Error", "Lost connection to Excel. Please try again.")
+            return
+
+        # Start the conversion process
+        start_conversion()
+
+    def _write_to_excel(self, converted_data: List[List[Any]], stats: Dict):
+        """Handles writing to Excel on the main thread"""
+        try:
+            # Verify connection again before writing
+            if not self.converter.excel.connect():
+                raise ExcelConnectionError("Lost connection to Excel")
+
+            # Get output mode
+            output_mode = OutputMode(self.output_mode_var.get())
+            
+            # Try to activate Excel
+            try:
+                if self.converter.excel.app:
+                    self.converter.excel.app.activate()
+            except:
+                pass
+
+            # Write the values
+            self.converter.excel.write_values(self.current_selection, converted_data, output_mode)
+            self._on_convert_complete(stats, True, None)
+
+        except Exception as e:
+            logger.error(f"Error writing to Excel: {e}")
+            self._on_convert_complete({}, False, 
+                ExcelConnectionError(f"Failed to write to Excel: {str(e)}"))
 
     def _on_convert_complete(self, stats: Dict, write_success: bool, error: Optional[Exception]):
         self._set_ui_state(True)

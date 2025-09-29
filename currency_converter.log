@@ -1,115 +1,15 @@
-2025-09-29 16:30:34,374 - ERROR - Failed to connect to Excel: No active Excel instance found.
-2025-09-29 16:30:37,379 - INFO - Fetched 28 rates from API for base USD
-2025-09-29 16:30:37,384 - INFO - Cache saved successfully.
-2025-09-29 16:31:00,475 - INFO - Loaded 1 cached rate entries from C:\Users\ssart\OneDrive\Desktop\Excel Exchange\rates_cache.json
-2025-09-29 16:31:00,699 - ERROR - Failed to connect to Excel: 'App' object has no attribute 'active_book'
-2025-09-29 16:31:00,702 - INFO - Using fresh cache for USD->EUR
-2025-09-29 16:33:57,723 - INFO - Loaded 1 cached rate entries from C:\Users\ssart\OneDrive\Desktop\Excel Exchange\rates_cache.json
-2025-09-29 16:33:57,908 - INFO - Connected to existing Excel instance.
-2025-09-29 16:33:57,959 - CRITICAL - A critical error occurred while connecting to or launching Excel: 'App' object has no attribute 'active_book'
-Traceback (most recent call last):
-  File "C:\Users\ssart\OneDrive\Desktop\Excel Exchange\app.py", line 236, in connect
-    self.book = self.app.active_book
-                ^^^^^^^^^^^^^^^^^^^^
-AttributeError: 'App' object has no attribute 'active_book'
-2025-09-29 16:36:27,922 - INFO - Loaded 1 cached rate entries from C:\Users\ssart\OneDrive\Desktop\Excel Exchange\rates_cache.json
-2025-09-29 16:36:28,241 - WARNING - No running Excel instance found. Launching a new one...
-2025-09-29 16:36:30,468 - INFO - Successfully launched a new Excel instance.
-2025-09-29 16:36:30,660 - INFO - Excel is ready. Active book: 'Book1'
-2025-09-29 16:39:46,004 - INFO - Loaded 1 cache entries
-2025-09-29 16:42:50,596 - INFO - Loaded 1 cache entries
-2025-09-29 16:44:16,934 - INFO - Loaded 1 cache entries
-2025-09-29 16:48:52,577 - INFO - Loaded 1 cache entries
-2025-09-29 16:55:25,726 - INFO - Loaded 1 cache entries
-2025-09-29 16:56:51,565 - INFO - Loaded 1 cache entries
-2025-09-29 17:00:31,300 - INFO - Loaded 1 cache entries
-2025-09-29 17:05:06,954 - INFO - Loaded 1 cache entries
-2025-09-29 17:05:13,429 - CRITICAL - Fatal error starting Excel: 'App' object has no attribute 'active_book'
-Traceback (most recent call last):
-  File "C:\Users\ssart\OneDrive\Desktop\Excel Exchange\app.py", line 237, in start_excel
-    self.book = self.app.active_book
-                ^^^^^^^^^^^^^^^^^^^^
-AttributeError: 'App' object has no attribute 'active_book'
-2025-09-29 17:05:16,055 - ERROR - Failed to connect to existing Excel instance: 'App' object has no attribute 'active_book'
-Traceback (most recent call last):
-  File "C:\Users\ssart\OneDrive\Desktop\Excel Exchange\app.py", line 218, in connect
-    self.book = self.app.active_book
-                ^^^^^^^^^^^^^^^^^^^^
-AttributeError: 'App' object has no attribute 'active_book'
-2025-09-29 17:09:54,067 - INFO - Loaded 1 cache entries
-2025-09-29 17:17:59,928 - INFO - Loaded 1 cache entries
-2025-09-29 17:17:59,951 - CRITICAL - A fatal error occurred: 'CurrencyConverterGUI' object has no attribute '_change_workbook'
-Traceback (most recent call last):
-  File "C:\Users\ssart\OneDrive\Desktop\Excel Exchange\app.py", line 712, in main
-    app = CurrencyConverterGUI(root)
-  File "C:\Users\ssart\OneDrive\Desktop\Excel Exchange\app.py", line 409, in __init__
-    self._build_gui()
-    ~~~~~~~~~~~~~~~^^
-  File "C:\Users\ssart\OneDrive\Desktop\Excel Exchange\app.py", line 429, in _build_gui
-    self._build_status_bar(main_frame)
-    ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
-  File "C:\Users\ssart\OneDrive\Desktop\Excel Exchange\app.py", line 443, in _build_status_bar
-    self.change_workbook_button = ttk.Button(status_frame, text="Change...", command=self._change_workbook, width=10)
-                                                                                     ^^^^^^^^^^^^^^^^^^^^^
-AttributeError: 'CurrencyConverterGUI' object has no attribute '_change_workbook'
-
-2025-09-29 17:22:09,231 - INFO - Loaded 1 cache entries
-2025-09-29 17:24:22,850 - INFO - Loaded 1 cache entries
-2025-09-29 17:24:23,152 - INFO - Connected to Excel. Active book: sales_data_sample.csv
-2025-09-29 17:24:23,173 - INFO - Open workbooks detected: sales_data_sample.csv
-2025-09-29 17:24:25,232 - INFO - Connected to Excel. Active book: sales_data_sample.csv
-2025-09-29 17:24:25,248 - INFO - Open workbooks detected: sales_data_sample.csv
-2025-09-29 17:24:27,321 - INFO - Connected to Excel. Active book: sales_data_sample.csv
-2025-09-29 17:24:27,333 - INFO - Open workbooks detected: sales_data_sample.csv
-2025-09-29 17:24:29,394 - INFO - Connected to Excel. Active book: sales_data_sample.csv
-2025-09-29 17:24:29,418 - INFO - Open workbooks detected: sales_data_sample.csv
-2025-09-29 17:24:31,479 - INFO - Connected to Excel. Active book: sales_data_sample.csv
-2025-09-29 17:24:31,504 - INFO - Open workbooks detected: sales_data_sample.csv
-2025-09-29 17:24:33,563 - INFO - Connected to Excel. Active book: sales_data_sample.csv
-2025-09-29 17:24:33,581 - INFO - Open workbooks detected: sales_data_sample.csv
-2025-09-29 17:24:35,629 - INFO - Connected to Excel. Active book: sales_data_sample.csv
-2025-09-29 17:24:35,651 - INFO - Open workbooks detected: sales_data_sample.csv
-2025-09-29 17:24:37,704 - INFO - Connected to Excel. Active book: sales_data_sample.csv
-2025-09-29 17:24:37,723 - INFO - Open workbooks detected: sales_data_sample.csv
-2025-09-29 17:24:39,783 - INFO - Connected to Excel. Active book: sales_data_sample.csv
-2025-09-29 17:24:39,806 - INFO - Open workbooks detected: sales_data_sample.csv
-2025-09-29 17:24:41,870 - INFO - Connected to Excel. Active book: sales_data_sample.csv
-2025-09-29 17:24:41,895 - INFO - Open workbooks detected: sales_data_sample.csv
-2025-09-29 17:24:43,960 - INFO - Connected to Excel. Active book: sales_data_sample.csv
-2025-09-29 17:24:43,981 - INFO - Open workbooks detected: sales_data_sample.csv
-2025-09-29 17:24:46,027 - INFO - Connected to Excel. Active book: sales_data_sample.csv
-2025-09-29 17:24:46,049 - INFO - Open workbooks detected: sales_data_sample.csv
-2025-09-29 17:24:48,130 - INFO - Connected to Excel. Active book: sales_data_sample.csv
-2025-09-29 17:24:48,166 - INFO - Open workbooks detected: sales_data_sample.csv
-2025-09-29 17:24:50,291 - INFO - Connected to Excel. Active book: sales_data_sample.csv
-2025-09-29 17:24:50,312 - INFO - Open workbooks detected: sales_data_sample.csv
-2025-09-29 17:24:52,434 - INFO - Connected to Excel. Active book: sales_data_sample.csv
-2025-09-29 17:24:52,456 - INFO - Open workbooks detected: sales_data_sample.csv
-2025-09-29 17:24:54,510 - INFO - Connected to Excel. Active book: sales_data_sample.csv
-2025-09-29 17:24:54,533 - INFO - Open workbooks detected: sales_data_sample.csv
-2025-09-29 17:24:56,594 - INFO - Connected to Excel. Active book: sales_data_sample.csv
-2025-09-29 17:24:56,622 - INFO - Open workbooks detected: sales_data_sample.csv
-2025-09-29 17:24:58,692 - INFO - Connected to Excel. Active book: sales_data_sample.csv
-2025-09-29 17:24:58,718 - INFO - Open workbooks detected: sales_data_sample.csv
-2025-09-29 17:25:00,800 - INFO - Connected to Excel. Active book: sales_data_sample.csv
-2025-09-29 17:25:00,828 - INFO - Open workbooks detected: sales_data_sample.csv
-2025-09-29 17:25:02,885 - INFO - Connected to Excel. Active book: sales_data_sample.csv
-2025-09-29 17:25:02,919 - INFO - Open workbooks detected: sales_data_sample.csv
-2025-09-29 17:25:04,990 - INFO - Connected to Excel. Active book: sales_data_sample.csv
-2025-09-29 17:25:05,018 - INFO - Open workbooks detected: sales_data_sample.csv
-2025-09-29 17:25:07,085 - INFO - Connected to Excel. Active book: sales_data_sample.csv
-2025-09-29 17:25:07,106 - INFO - Open workbooks detected: sales_data_sample.csv
-2025-09-29 17:25:09,178 - INFO - Connected to Excel. Active book: sales_data_sample.csv
-2025-09-29 17:25:09,200 - INFO - Open workbooks detected: sales_data_sample.csv
-2025-09-29 17:25:11,248 - INFO - Connected to Excel. Active book: sales_data_sample.csv
-2025-09-29 17:25:11,264 - INFO - Open workbooks detected: sales_data_sample.csv
-2025-09-29 17:25:13,318 - INFO - Connected to Excel. Active book: sales_data_sample.csv
-2025-09-29 17:25:13,352 - INFO - Open workbooks detected: sales_data_sample.csv
-2025-09-29 17:25:15,436 - INFO - Connected to Excel. Active book: sales_data_sample.csv
-2025-09-29 17:25:15,462 - INFO - Open workbooks detected: sales_data_sample.csv
-2025-09-29 17:25:17,520 - INFO - Connected to Excel. Active book: sales_data_sample.csv
-2025-09-29 17:25:17,552 - INFO - Open workbooks detected: sales_data_sample.csv
-2025-09-29 17:26:17,381 - INFO - Loaded 1 cache entries
-2025-09-29 17:26:17,625 - INFO - Connected to Excel. Active book: sales_data_sample.csv
-2025-09-29 17:27:31,373 - ERROR - Failed to refresh RUB: 404 Client Error: Not Found for url: https://api.frankfurter.app/latest?from=RUB&to=AUD%2CBRL%2CCAD%2CCHF%2CCNY%2CCZK%2CDKK%2CEUR%2CGBP%2CHKD%2CHUF%2CIDR%2CILS%2CINR%2CJPY%2CKRW%2CMXN%2CMYR%2CNOK%2CNZD%2CPHP%2CPLN%2CRON%2CSEK%2CSGD%2CTHB%2CTRY%2CUSD%2CZAR
-2025-09-29 17:27:40,395 - INFO - Cache saved.
+2025-09-29 17:38:42,013 - INFO - Loaded 29 cache entries
+2025-09-29 17:38:42,375 - INFO - Connected to Excel. Active book: sales_data_sample.csv
+2025-09-29 17:38:58,363 - ERROR - Error writing values to Excel: (-2147417842, 'The application called an interface that was marshalled for a different thread.', None, None)
+2025-09-29 17:38:58,364 - ERROR - Error writing to Excel: (-2147417842, 'The application called an interface that was marshalled for a different thread.', None, None)
+2025-09-29 17:41:18,015 - INFO - Loaded 29 cache entries
+2025-09-29 17:41:18,279 - INFO - Connected to Excel. Active book: sales_data_sample.csv
+2025-09-29 17:41:30,169 - INFO - Successfully wrote values to $C$2:$C$10 in sales_data_sample
+2025-09-29 17:42:07,711 - WARNING - Found Excel but couldn't get active book: [WinError -2147467259] Unspecified error
+2025-09-29 17:42:10,955 - WARNING - Found Excel but couldn't get active book: [WinError -2147467259] Unspecified error
+2025-09-29 17:42:12,735 - WARNING - Found Excel but couldn't get active book: [WinError -2147467259] Unspecified error
+2025-09-29 17:42:13,880 - WARNING - Found Excel but couldn't get active book: [WinError -2147467259] Unspecified error
+2025-09-29 17:42:17,966 - WARNING - Found Excel but couldn't get active book: [WinError -2147467259] Unspecified error
+2025-09-29 17:42:44,859 - INFO - Loaded 29 cache entries
+2025-09-29 17:42:51,945 - INFO - Connected to Excel. Active book: sales_data_sample.csv
+2025-09-29 17:43:07,063 - INFO - Successfully wrote values to $C$2:$C$6 in sales_data_sample
