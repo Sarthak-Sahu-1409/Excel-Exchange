@@ -204,59 +204,109 @@ class XLWingsExcelInterface(ExcelInterface):
     def __init__(self):
         self.app: Optional[xw.App] = None
         self.book: Optional[xw.Book] = None
+        self._last_connection_state = False
+        self._last_active_book = None
 
     def connect(self) -> bool:
-        """
-        Connects to the active Excel instance and sets the active workbook.
-        Returns True if successful, False otherwise.
-        """
+        """Tries to connect to an existing Excel instance and set the active book."""
         try:
-            if xw.apps.count > 0:
+            # First, try to get the active app if it exists
+            try:
                 self.app = xw.apps.active
-                if self.app and self.app.books.count > 0:
-                    self.book = self.app.active_book
-                else:
-                    self.book = None # No active book
-                return True
+            except:
+                self.app = None
+            
+            # If no active app found, look for any running Excel instances
+            if not self.app and xw.apps:
+                for app in xw.apps:
+                    try:
+                        # Check if the app is responsive
+                        _ = app.pid
+                        self.app = app
+                        break
+                    except:
+                        continue
+
+            # If we found a valid app, try to get its active book
+            current_connection_state = False
+            current_book_name = None
+            
+            if self.app:
+                try:
+                    if self.app.books:
+                        self.book = self.app.books.active
+                        if not self.book:  # If no active book, take the first one
+                            self.book = self.app.books[0]
+                    else:
+                        self.book = None
+                    
+                    current_connection_state = True
+                    current_book_name = self.book.name if self.book else None
+                    
+                    # Only log if there's been a change in state
+                    if (current_connection_state != self._last_connection_state or 
+                        current_book_name != self._last_active_book):
+                        logger.info(f"Connected to Excel. Active book: {current_book_name or 'None'}")
+                    
+                except Exception as e:
+                    if self._last_connection_state:  # Only log if this is a change in state
+                        logger.warning(f"Found Excel but couldn't get active book: {e}")
+                    self.book = None
+                    current_connection_state = True  # Still connected, just no active book
             else:
+                if self._last_connection_state:  # Only log if this is a change in state
+                    logger.warning("No running Excel instance found")
                 self.app = self.book = None
-                return False
-        except Exception:
+                current_connection_state = False
+            
+            # Update state tracking
+            self._last_connection_state = current_connection_state
+            self._last_active_book = current_book_name
+            
+            return current_connection_state
+            
+        except Exception as e:
+            if self._last_connection_state:  # Only log if this is a change in state
+                logger.error(f"Error connecting to Excel: {e}")
             self.app = self.book = None
+            self._last_connection_state = False
+            self._last_active_book = None
             return False
 
     def is_connected(self) -> bool:
         try:
-            # A connection is valid if there is an app and an active workbook
-            return self.app is not None and self.book is not None and self.app.api is not None
+            # More thorough connection check
+            if not self.app:
+                return False
+            
+            # Try to access essential properties to verify the connection
+            try:
+                _ = self.app.pid  # This will fail if Excel is not responding
+                _ = self.app.books  # This will fail if Excel is not accessible
+                return True
+            except:
+                return False
+                
         except Exception:
             return False
 
     def get_selection_from_inputbox(self) -> Optional[xw.Range]:
         """
-        ### NEW in v2.0.0 ###
         Uses Excel's native InputBox to get a range selection from the user.
-        This is more robust as it's a native Excel feature.
         """
         if not self.is_connected() or not self.app or not self.book:
             raise ExcelConnectionError("Excel is not connected to a workbook.")
         try:
-            # Type=8 means a Range selection. This will pause Python and show a prompt in Excel.
             prompt = "Please select the range of cells to convert."
             title = "Select Range for Conversion"
-            
-            # It returns the address of the selected range
             address = self.app.api.InputBox(prompt, title, Type=8)
             
-            # If the user cancels, the address can be `False` or an empty string
             if not address:
                 logger.warning("User cancelled the InputBox or selection was invalid.")
                 return None
             
-            # Return a proper xlwings Range object from the address
             return self.book.sheets.active.range(address)
         except Exception as e:
-            # This can happen if the user clicks "Cancel" on the InputBox
             if "Cancel" in str(e) or "OLE error 0x800a03ec" in str(e):
                 logger.info("User cancelled the range selection InputBox.")
                 return None
@@ -265,6 +315,34 @@ class XLWingsExcelInterface(ExcelInterface):
 
     def read_values(self, selection: xw.Range) -> List[List[Any]]:
         return selection.options(ndim=2).value
+
+    def list_open_workbooks(self) -> List[str]:
+        if not self.is_connected() or not self.app:
+            return []
+        return [book.name for book in self.app.books]
+
+    def set_active_workbook(self, name: str) -> bool:
+        if not self.is_connected() or not self.app:
+            return False
+        try:
+            self.book = self.app.books[name]
+            self.book.activate()
+            return True
+        except Exception as e:
+            logger.error(f"Failed to set active workbook to '{name}': {e}")
+            return False
+
+    def open_workbook(self, path: str) -> Optional[xw.Book]:
+        if not self.is_connected() or not self.app:
+            return None
+        try:
+            book = self.app.books.open(path)
+            self.book = book
+            self.book.activate()
+            return book
+        except Exception as e:
+            logger.error(f"Failed to open workbook at '{path}': {e}")
+            return None
 
     def write_values(self, selection: xw.Range, values: List[List[Any]], mode: OutputMode) -> None:
         target_range = None
@@ -317,11 +395,70 @@ class CurrencyConverter:
         return converted_values, stats
 
 # ================================ GUI APPLICATION ============================
+
+class WorkbookSelectionDialog(simpledialog.Dialog):
+    """A dialog to allow the user to select from open workbooks or open a new one."""
+    def __init__(self, parent, title, open_workbooks: List[str]):
+        self.open_workbooks = open_workbooks
+        self.result = None
+        self.selection = tk.StringVar()
+        if self.open_workbooks:
+            self.selection.set(self.open_workbooks[0])
+        super().__init__(parent, title)
+
+    def body(self, master):
+        master.pack(padx=10, pady=10)
+        ttk.Label(master, text="Choose an open workbook or open a new file:").pack(pady=(0,10))
+        
+        list_frame = ttk.Frame(master)
+        list_frame.pack(fill=tk.BOTH, expand=True)
+        
+        self.listbox = tk.Listbox(list_frame, selectmode=tk.SINGLE, exportselection=False)
+        for book_name in self.open_workbooks:
+            self.listbox.insert(tk.END, book_name)
+        self.listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        
+        scrollbar = ttk.Scrollbar(list_frame, orient=tk.VERTICAL, command=self.listbox.yview)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        self.listbox.config(yscrollcommand=scrollbar.set)
+
+        if self.open_workbooks:
+            self.listbox.selection_set(0)
+
+        self.listbox.bind('<<ListboxSelect>>', self.on_select)
+        return self.listbox
+
+    def on_select(self, evt):
+        w = evt.widget
+        if w.curselection():
+            index = int(w.curselection()[0])
+            self.selection.set(w.get(index))
+
+    def buttonbox(self):
+        box = ttk.Frame(self)
+        ttk.Button(box, text="Use Selected", width=15, command=self.ok, default=tk.ACTIVE).pack(side=tk.LEFT, padx=5, pady=5)
+        ttk.Button(box, text="Open File...", width=15, command=self.open_file).pack(side=tk.LEFT, padx=5, pady=5)
+        ttk.Button(box, text="Cancel", width=10, command=self.cancel).pack(side=tk.LEFT, padx=5, pady=5)
+        self.bind("<Return>", self.ok)
+        self.bind("<Escape>", self.cancel)
+        box.pack()
+
+    def ok(self, event=None):
+        if not self.selection.get():
+            messagebox.showwarning("No Selection", "Please select a workbook from the list.", parent=self)
+            return
+        self.result = ("select", self.selection.get())
+        super().ok()
+
+    def open_file(self):
+        self.result = ("open", None)
+        super().ok()
+
 class CurrencyConverterGUI:
     def __init__(self, root: tk.Tk):
         self.root = root
         self.root.title("Excel Currency Converter Pro")
-        self.root.geometry("700x600") # Adjusted height
+        self.root.geometry("700x600")
         self.root.minsize(600, 500)
         self.root.configure(bg=COLORS['bg_primary'])
         self.converter = CurrencyConverter()
@@ -330,7 +467,7 @@ class CurrencyConverterGUI:
         self._setup_styles()
         self._build_gui()
         self._center_window()
-        self.root.after(100, self._periodic_check) # Start the periodic check
+        self.root.after(100, self._periodic_check)
 
     def _setup_styles(self):
         # This method is unchanged
@@ -360,9 +497,84 @@ class CurrencyConverterGUI:
         status_frame = ttk.Frame(parent, padding=5)
         status_frame.pack(fill=tk.X, pady=(0, 10))
         self.excel_status_label = ttk.Label(status_frame, text="● Excel: Checking...")
-        self.excel_status_label.pack(side=tk.LEFT, padx=(0, 20))
+        self.excel_status_label.pack(side=tk.LEFT, padx=(0, 10))
+        
+        self.change_workbook_button = ttk.Button(status_frame, text="Change...", command=self._change_workbook, width=10)
+        self.change_workbook_button.pack(side=tk.LEFT, padx=(0, 20))
+        self.change_workbook_button.config(state='disabled')
+
         self.api_status_label = ttk.Label(status_frame, text="● API: Checking...")
         self.api_status_label.pack(side=tk.LEFT, padx=(0, 20))
+        
+    def _change_workbook(self):
+        """
+        ### NEW METHOD IN v2.0.0 ###
+        Opens a dialog to let the user select from open workbooks or open a new file.
+        """
+        # Force a fresh connection attempt
+        if not self.converter.excel.connect():
+            messagebox.showerror("Excel Error", "Excel is not connected. Please open Excel and try again.")
+            return
+
+        open_workbooks = self.converter.excel.list_open_workbooks()
+        if not open_workbooks:
+            if messagebox.askyesno("No Workbooks", "No open workbooks found. Would you like to open a new workbook?"):
+                self._open_new_workbook()
+            return
+
+        dialog = WorkbookSelectionDialog(self.root, "Select Workbook", open_workbooks)
+        if not dialog.result:
+            return  # User cancelled
+
+        action, selection = dialog.result
+        success = False
+        
+        if action == "select":
+            # Ensure Excel is still connected
+            if not self.converter.excel.connect():
+                messagebox.showerror("Excel Error", "Lost connection to Excel. Please try again.")
+                return
+
+            success = self.converter.excel.set_active_workbook(selection)
+            if success:
+                self._log(f"Switched to workbook: {selection}", "success")
+                # Clear any existing selection
+                self.current_selection = None
+                self.excel_values = None
+                self.selection_info_var.set("No selection yet.")
+            else:
+                self._log(f"Failed to switch to workbook: {selection}", "error")
+        elif action == "open":
+            self._open_new_workbook()
+        
+        # Force a connection check to update the status
+        self._periodic_check()
+
+    def _open_new_workbook(self):
+        """Helper method to handle opening a new workbook."""
+        from tkinter import filedialog
+        file_path = filedialog.askopenfilename(
+            title="Open Excel Workbook",
+            filetypes=[
+                ("Excel files", "*.xlsx;*.xlsm;*.xls"),
+                ("All files", "*.*")
+            ]
+        )
+        if file_path:
+            # Ensure Excel is still connected
+            if not self.converter.excel.connect():
+                messagebox.showerror("Excel Error", "Lost connection to Excel. Please try again.")
+                return
+
+            book = self.converter.excel.open_workbook(file_path)
+            if book:
+                self._log(f"Opened workbook: {book.name}", "success")
+                # Clear any existing selection
+                self.current_selection = None
+                self.excel_values = None
+                self.selection_info_var.set("No selection yet.")
+            else:
+                self._log(f"Failed to open workbook: {file_path}", "error")
 
     def _build_currency_section(self, parent): # Unchanged
         frame = ttk.LabelFrame(parent, text="Currency Settings", padding=10)
@@ -381,21 +593,19 @@ class CurrencyConverterGUI:
 
     def _build_input_section(self, parent):
         """
-        ### MODIFIED in v2.0.0 ###
-        This section is simplified to a single button that triggers
-        Excel's native InputBox for range selection.
+        ### MODIFIED ###
+        This section now includes a read-only entry to display the selected range.
         """
         frame = ttk.LabelFrame(parent, text="Input Source", padding=10)
         frame.pack(fill=tk.X, pady=5)
-        frame.columnconfigure(0, weight=1)
+        frame.columnconfigure(1, weight=1)
 
-        # --- Single button for interactive selection ---
         self.select_button = ttk.Button(frame, text="Select Range in Excel...", command=self._select_from_excel_interactive)
-        self.select_button.grid(row=0, column=0, padx=5, pady=10, sticky='ew')
+        self.select_button.grid(row=0, column=0, padx=5, pady=5, sticky='w')
         
-        # --- Common display for selection info ---
-        self.selection_info_label = ttk.Label(frame, text="No selection yet.", font=('Segoe UI', 9, 'italic'))
-        self.selection_info_label.grid(row=1, column=0, columnspan=2, padx=5, pady=(5, 5), sticky='w')
+        self.selection_info_var = tk.StringVar(value="No selection yet.")
+        self.selection_info_entry = ttk.Entry(frame, textvariable=self.selection_info_var, state='readonly', font=('Segoe UI', 9, 'italic'))
+        self.selection_info_entry.grid(row=0, column=1, padx=5, pady=5, sticky='ew')
 
 
     def _build_options_section(self, parent): # Unchanged
@@ -448,16 +658,28 @@ class CurrencyConverterGUI:
         ### NEW WORKFLOW in v2.0.0 ###
         Uses Excel's native InputBox to get a range from the user.
         """
-        if not self.converter.excel.is_connected():
-            messagebox.showerror("Excel Error", "Excel is not connected. Please restart the application.")
+        # Force a connection check before proceeding
+        if not self.converter.excel.connect():
+            messagebox.showerror("Excel Error", "Excel is not connected. Please open Excel and try again.")
             return
 
         try:
+            # Ensure we have an active workbook
+            if not self.converter.excel.book:
+                messagebox.showwarning("No Workbook", "Please open or select a workbook first.")
+                return
+
             # This call is blocking and will wait for user input in Excel
             selection = self.converter.excel.get_selection_from_inputbox()
             
             if selection:
                 self._process_selection(selection)
+                # Activate Excel window after selection
+                try:
+                    if self.converter.excel.app:
+                        self.converter.excel.app.activate()
+                except:
+                    pass
             else:
                 self._log("Range selection was cancelled by the user in Excel.", "warning")
         except Exception as e:
@@ -470,12 +692,33 @@ class CurrencyConverterGUI:
         A single, refactored method to handle a valid selection object,
         whether it comes from the mouse or manual input.
         """
-        self.current_selection = selection
-        self.excel_values = self.converter.excel.read_values(selection)
-        
-        info_text = f"Selected: {selection.sheet.name}!{selection.address} ({selection.count} cells)"
-        self.selection_info_label.config(text=info_text)
-        self._log(info_text, "success")
+        try:
+            # Verify the selection is still valid
+            if not selection or not selection.sheet or not selection.address:
+                raise ValueError("Invalid selection")
+
+            self.current_selection = selection
+            self.excel_values = self.converter.excel.read_values(selection)
+            
+            # Get detailed selection info
+            sheet_name = selection.sheet.name
+            address = selection.address
+            rows, cols = selection.shape
+            cell_count = rows * cols
+            
+            info_text = f"Selected: {sheet_name}!{address} ({rows}×{cols}, {cell_count} cells)"
+            self.selection_info_var.set(info_text)
+            self._log(info_text, "success")
+            
+            # Enable the convert button now that we have a valid selection
+            self.convert_button.config(state='normal')
+            
+        except Exception as e:
+            self.current_selection = None
+            self.excel_values = None
+            self.selection_info_var.set("No selection yet.")
+            self.convert_button.config(state='disabled')
+            raise ValueError(f"Failed to process selection: {str(e)}")
     
     # --- Other methods are mostly unchanged ---
     
@@ -505,28 +748,53 @@ class CurrencyConverterGUI:
         This runs in a background thread to avoid freezing the GUI.
         """
         def task():
-            # Check Excel
+            # Check Excel and get detailed status
             excel_ok = self.converter.excel.connect()
             book_name = None
+            
             if excel_ok:
-                if self.converter.excel.book:
-                    book_name = self.converter.excel.book.name
-                else:
-                    book_name = "No active workbook"
+                try:
+                    # Get current workbook name
+                    if self.converter.excel.book:
+                        book_name = self.converter.excel.book.name
+                    
+                    # Only update button state if needed
+                    def update_button():
+                        current_state = self.change_workbook_button['state']
+                        new_state = 'normal' if excel_ok else 'disabled'
+                        if current_state != new_state:
+                            self.change_workbook_button.config(state=new_state)
+                    
+                    self.root.after(0, update_button)
+                    
+                except Exception as e:
+                    if book_name != "Error getting workbook info":  # Only log state changes
+                        logger.warning(f"Error getting Excel details: {e}")
+                    book_name = "Error getting workbook info"
+                    excel_ok = False
+            else:
+                book_name = "Not Connected"
 
-            # Check API
+            # Check API (less frequently)
             api_ok = False
-            try:
-                self.converter.rate_provider.get_rate("USD", "EUR")
-                api_ok = True
-            except Exception:
-                api_ok = False
+            if not hasattr(self, '_last_api_check') or time.time() - self._last_api_check > 10:
+                try:
+                    self.converter.rate_provider.get_rate("USD", "EUR")
+                    api_ok = True
+                except Exception:
+                    api_ok = False
+                self._last_api_check = time.time()
+            else:
+                # Use the last known API state
+                api_ok = hasattr(self, '_last_api_state') and self._last_api_state
+            
+            self._last_api_state = api_ok
             
             # Schedule GUI update on the main thread
             self.root.after(0, self._update_connection_status, excel_ok, api_ok, book_name)
             
-            # Schedule the next check
-            self.root.after(2000, self._periodic_check) # Check every 2 seconds
+            # Schedule the next check (every 5 seconds instead of 2)
+            self.root.after(5000, self._periodic_check)
 
         # Run the check in a thread to not block the GUI
         if not hasattr(self, '_check_thread') or not self._check_thread.is_alive():
