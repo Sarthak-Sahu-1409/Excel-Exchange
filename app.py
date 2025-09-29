@@ -889,8 +889,7 @@ class CurrencyConverterGUI:
             request = ConversionRequest(
                 from_currency=self.from_currency_var.get(),
                 to_currency=self.to_currency_var.get(),
-                precision=self.precision_var.get(),
-                add_suffix=self.add_suffix_var.get()
+                precision=self.precision_var.get()
             )
             self._convert_excel(request)
         except tk.TclError:
