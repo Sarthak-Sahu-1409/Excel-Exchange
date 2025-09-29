@@ -1,2 +1,119 @@
 2025-09-29 18:15:14,214 - INFO - Loaded 4 cache entries
 2025-09-29 18:15:15,629 - INFO - Connected to Excel. Active book: Placement,Internship, PPO Data.xlsx
+2025-09-29 18:24:27,457 - INFO - Loaded 4 cache entries
+2025-09-29 18:24:28,713 - INFO - Connected to Excel. Active book: Placement,Internship, PPO Data.xlsx
+2025-09-29 18:25:00,619 - INFO - Successfully wrote values to $J$1:$J$10 in Internship
+2025-09-29 18:25:44,255 - ERROR - Failed to calculate rates for AUD: No rate found for RUB
+2025-09-29 18:25:44,258 - ERROR - Failed to calculate rates for BRL: No rate found for RUB
+2025-09-29 18:25:44,261 - ERROR - Failed to calculate rates for CAD: No rate found for RUB
+2025-09-29 18:25:44,266 - ERROR - Failed to calculate rates for CHF: No rate found for RUB
+2025-09-29 18:25:44,268 - ERROR - Failed to calculate rates for CNY: No rate found for RUB
+2025-09-29 18:25:44,271 - ERROR - Failed to calculate rates for CZK: No rate found for RUB
+2025-09-29 18:25:44,272 - ERROR - Failed to calculate rates for DKK: No rate found for RUB
+2025-09-29 18:25:44,273 - ERROR - Failed to calculate rates for EUR: No rate found for RUB
+2025-09-29 18:25:44,275 - ERROR - Failed to calculate rates for GBP: No rate found for RUB
+2025-09-29 18:25:44,276 - ERROR - Failed to calculate rates for HKD: No rate found for RUB
+2025-09-29 18:25:44,277 - ERROR - Failed to calculate rates for HUF: No rate found for RUB
+2025-09-29 18:25:44,279 - ERROR - Failed to calculate rates for IDR: No rate found for RUB
+2025-09-29 18:25:44,280 - ERROR - Failed to calculate rates for ILS: No rate found for RUB
+2025-09-29 18:25:44,281 - ERROR - Failed to calculate rates for INR: No rate found for RUB
+2025-09-29 18:25:44,282 - ERROR - Failed to calculate rates for JPY: No rate found for RUB
+2025-09-29 18:25:44,283 - ERROR - Failed to calculate rates for KRW: No rate found for RUB
+2025-09-29 18:25:44,284 - ERROR - Failed to calculate rates for MXN: No rate found for RUB
+2025-09-29 18:25:44,285 - ERROR - Failed to calculate rates for MYR: No rate found for RUB
+2025-09-29 18:25:44,285 - ERROR - Failed to calculate rates for NOK: No rate found for RUB
+2025-09-29 18:25:44,286 - ERROR - Failed to calculate rates for NZD: No rate found for RUB
+2025-09-29 18:25:44,287 - ERROR - Failed to calculate rates for PHP: No rate found for RUB
+2025-09-29 18:25:44,288 - ERROR - Failed to calculate rates for PLN: No rate found for RUB
+2025-09-29 18:25:44,289 - ERROR - Failed to calculate rates for RON: No rate found for RUB
+2025-09-29 18:25:44,290 - ERROR - Failed to calculate rates for RUB: No rate found for RUB
+2025-09-29 18:25:44,291 - ERROR - Failed to calculate rates for SEK: No rate found for RUB
+2025-09-29 18:25:44,292 - ERROR - Failed to calculate rates for SGD: No rate found for RUB
+2025-09-29 18:25:44,293 - ERROR - Failed to calculate rates for THB: No rate found for RUB
+2025-09-29 18:25:44,295 - ERROR - Failed to calculate rates for TRY: No rate found for RUB
+2025-09-29 18:25:44,297 - ERROR - Failed to calculate rates for ZAR: No rate found for RUB
+2025-09-29 18:25:44,298 - INFO - Cache saved.
+2025-09-29 18:25:44,298 - INFO - Successfully refreshed all currency rates
+2025-09-29 18:31:00,859 - INFO - Loaded 4 cache entries
+2025-09-29 18:31:02,000 - INFO - Connected to Excel. Active book: Placement,Internship, PPO Data.xlsx
+2025-09-29 18:34:50,863 - INFO - Loaded 4 cache entries
+2025-09-29 18:34:52,036 - INFO - Connected to Excel. Active book: Placement,Internship, PPO Data.xlsx
+2025-09-29 18:35:30,497 - ERROR - Failed to calculate rates for AUD: No rate found for RUB
+2025-09-29 18:35:30,499 - ERROR - Failed to calculate rates for BRL: No rate found for RUB
+2025-09-29 18:35:30,500 - ERROR - Failed to calculate rates for CAD: No rate found for RUB
+2025-09-29 18:35:30,502 - ERROR - Failed to calculate rates for CHF: No rate found for RUB
+2025-09-29 18:35:30,504 - ERROR - Failed to calculate rates for CNY: No rate found for RUB
+2025-09-29 18:35:30,506 - ERROR - Failed to calculate rates for CZK: No rate found for RUB
+2025-09-29 18:35:30,508 - ERROR - Failed to calculate rates for DKK: No rate found for RUB
+2025-09-29 18:35:30,509 - ERROR - Failed to calculate rates for EUR: No rate found for RUB
+2025-09-29 18:35:30,510 - ERROR - Failed to calculate rates for GBP: No rate found for RUB
+2025-09-29 18:35:30,511 - ERROR - Failed to calculate rates for HKD: No rate found for RUB
+2025-09-29 18:35:30,512 - ERROR - Failed to calculate rates for HUF: No rate found for RUB
+2025-09-29 18:35:30,513 - ERROR - Failed to calculate rates for IDR: No rate found for RUB
+2025-09-29 18:35:30,513 - ERROR - Failed to calculate rates for ILS: No rate found for RUB
+2025-09-29 18:35:30,514 - ERROR - Failed to calculate rates for INR: No rate found for RUB
+2025-09-29 18:35:30,515 - ERROR - Failed to calculate rates for JPY: No rate found for RUB
+2025-09-29 18:35:30,516 - ERROR - Failed to calculate rates for KRW: No rate found for RUB
+2025-09-29 18:35:30,517 - ERROR - Failed to calculate rates for MXN: No rate found for RUB
+2025-09-29 18:35:30,518 - ERROR - Failed to calculate rates for MYR: No rate found for RUB
+2025-09-29 18:35:30,519 - ERROR - Failed to calculate rates for NOK: No rate found for RUB
+2025-09-29 18:35:30,520 - ERROR - Failed to calculate rates for NZD: No rate found for RUB
+2025-09-29 18:35:30,520 - ERROR - Failed to calculate rates for PHP: No rate found for RUB
+2025-09-29 18:35:30,521 - ERROR - Failed to calculate rates for PLN: No rate found for RUB
+2025-09-29 18:35:30,521 - ERROR - Failed to calculate rates for RON: No rate found for RUB
+2025-09-29 18:35:30,523 - ERROR - Failed to calculate rates for RUB: No rate found for RUB
+2025-09-29 18:35:30,524 - ERROR - Failed to calculate rates for SEK: No rate found for RUB
+2025-09-29 18:35:30,525 - ERROR - Failed to calculate rates for SGD: No rate found for RUB
+2025-09-29 18:35:30,526 - ERROR - Failed to calculate rates for THB: No rate found for RUB
+2025-09-29 18:35:30,528 - ERROR - Failed to calculate rates for TRY: No rate found for RUB
+2025-09-29 18:35:30,529 - ERROR - Failed to calculate rates for ZAR: No rate found for RUB
+2025-09-29 18:35:30,530 - INFO - Cache saved.
+2025-09-29 18:35:30,530 - INFO - Successfully refreshed all currency rates
+2025-09-29 18:40:18,853 - INFO - Loaded 4 cache entries
+2025-09-29 18:40:20,130 - INFO - Connected to Excel. Active book: Placement,Internship, PPO Data.xlsx
+2025-09-29 18:42:25,739 - INFO - Loaded 4 cache entries
+2025-09-29 18:42:26,935 - INFO - Connected to Excel. Active book: Placement,Internship, PPO Data.xlsx
+2025-09-29 18:44:26,788 - INFO - Connected to Excel. Active book: Placement,Internship, PPO Data.xlsx
+2025-09-29 18:44:27,305 - INFO - Cache saved.
+2025-09-29 18:44:37,108 - ERROR - Failed to calculate rates for AUD: No rate found for RUB
+2025-09-29 18:44:37,109 - ERROR - Failed to calculate rates for BRL: No rate found for RUB
+2025-09-29 18:44:37,110 - ERROR - Failed to calculate rates for CAD: No rate found for RUB
+2025-09-29 18:44:37,110 - ERROR - Failed to calculate rates for CHF: No rate found for RUB
+2025-09-29 18:44:37,111 - ERROR - Failed to calculate rates for CNY: No rate found for RUB
+2025-09-29 18:44:37,112 - ERROR - Failed to calculate rates for CZK: No rate found for RUB
+2025-09-29 18:44:37,112 - ERROR - Failed to calculate rates for DKK: No rate found for RUB
+2025-09-29 18:44:37,113 - ERROR - Failed to calculate rates for EUR: No rate found for RUB
+2025-09-29 18:44:37,114 - ERROR - Failed to calculate rates for GBP: No rate found for RUB
+2025-09-29 18:44:37,114 - ERROR - Failed to calculate rates for HKD: No rate found for RUB
+2025-09-29 18:44:37,115 - ERROR - Failed to calculate rates for HUF: No rate found for RUB
+2025-09-29 18:44:37,116 - ERROR - Failed to calculate rates for IDR: No rate found for RUB
+2025-09-29 18:44:37,116 - ERROR - Failed to calculate rates for ILS: No rate found for RUB
+2025-09-29 18:44:37,117 - ERROR - Failed to calculate rates for INR: No rate found for RUB
+2025-09-29 18:44:37,118 - ERROR - Failed to calculate rates for JPY: No rate found for RUB
+2025-09-29 18:44:37,119 - ERROR - Failed to calculate rates for KRW: No rate found for RUB
+2025-09-29 18:44:37,121 - ERROR - Failed to calculate rates for MXN: No rate found for RUB
+2025-09-29 18:44:37,122 - ERROR - Failed to calculate rates for MYR: No rate found for RUB
+2025-09-29 18:44:37,122 - ERROR - Failed to calculate rates for NOK: No rate found for RUB
+2025-09-29 18:44:37,123 - ERROR - Failed to calculate rates for NZD: No rate found for RUB
+2025-09-29 18:44:37,123 - ERROR - Failed to calculate rates for PHP: No rate found for RUB
+2025-09-29 18:44:37,124 - ERROR - Failed to calculate rates for PLN: No rate found for RUB
+2025-09-29 18:44:37,124 - ERROR - Failed to calculate rates for RON: No rate found for RUB
+2025-09-29 18:44:37,125 - ERROR - Failed to calculate rates for RUB: No rate found for RUB
+2025-09-29 18:44:37,126 - ERROR - Failed to calculate rates for SEK: No rate found for RUB
+2025-09-29 18:44:37,127 - ERROR - Failed to calculate rates for SGD: No rate found for RUB
+2025-09-29 18:44:37,127 - ERROR - Failed to calculate rates for THB: No rate found for RUB
+2025-09-29 18:44:37,128 - ERROR - Failed to calculate rates for TRY: No rate found for RUB
+2025-09-29 18:44:37,128 - ERROR - Failed to calculate rates for ZAR: No rate found for RUB
+2025-09-29 18:44:37,129 - INFO - Cache saved.
+2025-09-29 18:44:37,129 - INFO - Successfully refreshed rates for 1/30 currencies
+2025-09-29 18:46:50,391 - INFO - Loaded 1 cache entries
+2025-09-29 18:46:51,550 - INFO - Connected to Excel. Active book: Placement,Internship, PPO Data.xlsx
+2025-09-29 18:47:02,594 - INFO - Cache saved.
+2025-09-29 18:47:19,465 - ERROR - Failed to fetch rates for RUB: 404 Client Error: Not Found for url: https://api.frankfurter.app/latest?from=RUB&to=AUD%2CBRL%2CCAD%2CCHF%2CCNY%2CCZK%2CDKK%2CEUR%2CGBP%2CHKD%2CHUF%2CIDR%2CILS%2CINR%2CJPY%2CKRW%2CMXN%2CMYR%2CNOK%2CNZD%2CPHP%2CPLN%2CRON%2CRUB%2CSEK%2CSGD%2CTHB%2CTRY%2CUSD%2CZAR
+2025-09-29 18:47:24,608 - INFO - Cache saved.
+2025-09-29 18:47:24,609 - INFO - Successfully refreshed 29 out of 30 currency rates
+2025-09-29 18:48:06,235 - INFO - Loaded 29 cache entries
+2025-09-29 18:48:07,451 - INFO - Connected to Excel. Active book: Placement,Internship, PPO Data.xlsx
+2025-09-29 18:48:18,508 - INFO - Cache saved.
+2025-09-29 18:48:44,763 - INFO - Cache saved.
+2025-09-29 18:48:44,765 - INFO - Successfully refreshed 29 out of 29 currency rates
