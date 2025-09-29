@@ -1,0 +1,39 @@
+2025-09-29 16:30:34,374 - ERROR - Failed to connect to Excel: No active Excel instance found.
+2025-09-29 16:30:37,379 - INFO - Fetched 28 rates from API for base USD
+2025-09-29 16:30:37,384 - INFO - Cache saved successfully.
+2025-09-29 16:31:00,475 - INFO - Loaded 1 cached rate entries from C:\Users\ssart\OneDrive\Desktop\Excel Exchange\rates_cache.json
+2025-09-29 16:31:00,699 - ERROR - Failed to connect to Excel: 'App' object has no attribute 'active_book'
+2025-09-29 16:31:00,702 - INFO - Using fresh cache for USD->EUR
+2025-09-29 16:33:57,723 - INFO - Loaded 1 cached rate entries from C:\Users\ssart\OneDrive\Desktop\Excel Exchange\rates_cache.json
+2025-09-29 16:33:57,908 - INFO - Connected to existing Excel instance.
+2025-09-29 16:33:57,959 - CRITICAL - A critical error occurred while connecting to or launching Excel: 'App' object has no attribute 'active_book'
+Traceback (most recent call last):
+  File "C:\Users\ssart\OneDrive\Desktop\Excel Exchange\app.py", line 236, in connect
+    self.book = self.app.active_book
+                ^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'App' object has no attribute 'active_book'
+2025-09-29 16:36:27,922 - INFO - Loaded 1 cached rate entries from C:\Users\ssart\OneDrive\Desktop\Excel Exchange\rates_cache.json
+2025-09-29 16:36:28,241 - WARNING - No running Excel instance found. Launching a new one...
+2025-09-29 16:36:30,468 - INFO - Successfully launched a new Excel instance.
+2025-09-29 16:36:30,660 - INFO - Excel is ready. Active book: 'Book1'
+2025-09-29 16:39:46,004 - INFO - Loaded 1 cache entries
+2025-09-29 16:42:50,596 - INFO - Loaded 1 cache entries
+2025-09-29 16:44:16,934 - INFO - Loaded 1 cache entries
+2025-09-29 16:48:52,577 - INFO - Loaded 1 cache entries
+2025-09-29 16:55:25,726 - INFO - Loaded 1 cache entries
+2025-09-29 16:56:51,565 - INFO - Loaded 1 cache entries
+2025-09-29 17:00:31,300 - INFO - Loaded 1 cache entries
+2025-09-29 17:05:06,954 - INFO - Loaded 1 cache entries
+2025-09-29 17:05:13,429 - CRITICAL - Fatal error starting Excel: 'App' object has no attribute 'active_book'
+Traceback (most recent call last):
+  File "C:\Users\ssart\OneDrive\Desktop\Excel Exchange\app.py", line 237, in start_excel
+    self.book = self.app.active_book
+                ^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'App' object has no attribute 'active_book'
+2025-09-29 17:05:16,055 - ERROR - Failed to connect to existing Excel instance: 'App' object has no attribute 'active_book'
+Traceback (most recent call last):
+  File "C:\Users\ssart\OneDrive\Desktop\Excel Exchange\app.py", line 218, in connect
+    self.book = self.app.active_book
+                ^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'App' object has no attribute 'active_book'
+2025-09-29 17:09:54,067 - INFO - Loaded 1 cache entries
