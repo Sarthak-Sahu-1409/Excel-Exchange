@@ -34,4 +34,3 @@ python3 app.py
 - **User-Friendly GUI:** Intuitive graphical interface powered by Tkinter for hassle-free interactions and effortless use.
 - **Smart Caching:** Locally caches exchange rates for 30 minutes to boost performance and minimize unnecessary API requests.
 - **Comprehensive Logging:** Maintains detailed logs of all operations to simplify troubleshooting and support smooth debugging.
-```
