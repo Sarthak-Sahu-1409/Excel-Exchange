@@ -171,17 +171,72 @@ class ExchangeRateProvider:
 
     def refresh_all_rates(self, progress_callback=None) -> Dict[str, bool]:
         results = {}
-        for i, currency in enumerate(CURRENCIES):
+        total_currencies = len(CURRENCIES)
+        
+        try:
             if progress_callback:
-                progress_callback(i, len(CURRENCIES), f"Fetching {currency}...")
-            try:
-                rates = self._fetch_from_api(currency)
-                self._cache[currency] = CacheEntry(base_currency=currency, rates=rates, timestamp=time.time())
-                results[currency] = True
-            except Exception as e:
-                logger.error(f"Failed to refresh {currency}: {e}")
-                results[currency] = False
-        self._save_cache()
+                progress_callback(0, total_currencies, "Fetching base rates...")
+            
+            # Fetch USD rates as base (USD is most commonly used)
+            usd_rates = self._fetch_from_api('USD')
+            if not usd_rates:
+                raise APIError("Failed to fetch USD rates")
+                
+            # Store USD rates
+            self._cache['USD'] = CacheEntry(
+                base_currency='USD',
+                rates=usd_rates,
+                timestamp=time.time(),
+                source="api"
+            )
+            results['USD'] = True
+            
+            # Calculate all other rates using USD as base
+            for i, currency in enumerate(c for c in CURRENCIES if c != 'USD'):
+                if progress_callback:
+                    progress_callback(i + 1, total_currencies, f"Processing {currency}...")
+                
+                try:
+                    # Get rate to convert from USD to current currency
+                    usd_to_curr = usd_rates.get(currency)
+                    if usd_to_curr is None:
+                        raise ValueError(f"No rate found for {currency}")
+                    
+                    # Calculate rates for this currency to all others
+                    rates = {}
+                    for target in CURRENCIES:
+                        if target == currency:
+                            rates[target] = 1.0  # Same currency
+                        elif target == 'USD':
+                            rates[target] = 1 / usd_to_curr  # Inverse of USD rate
+                        else:
+                            # Cross rate: first convert to USD, then to target
+                            usd_to_target = usd_rates.get(target)
+                            if usd_to_target is None:
+                                raise ValueError(f"No rate found for {target}")
+                            rates[target] = (1 / usd_to_curr) * usd_to_target
+                    
+                    # Store the calculated rates
+                    self._cache[currency] = CacheEntry(
+                        base_currency=currency,
+                        rates=rates,
+                        timestamp=time.time(),
+                        source="calculated"
+                    )
+                    results[currency] = True
+                    
+                except Exception as e:
+                    logger.error(f"Failed to calculate rates for {currency}: {str(e)}")
+                    results[currency] = False
+            
+            # Save all rates to cache
+            self._save_cache()
+            logger.info("Successfully refreshed all currency rates")
+            
+        except Exception as e:
+            logger.error(f"Failed to refresh rates: {str(e)}")
+            return {curr: False for curr in CURRENCIES}
+            
         return results
 
 # ================================ EXCEL INTERFACE ============================
@@ -535,10 +590,6 @@ class CurrencyConverterGUI:
         status_frame.pack(fill=tk.X, pady=(0, 10))
         self.excel_status_label = ttk.Label(status_frame, text="● Excel: Checking...")
         self.excel_status_label.pack(side=tk.LEFT, padx=(0, 10))
-        
-        self.change_workbook_button = ttk.Button(status_frame, text="Change...", command=self._change_workbook, width=10)
-        self.change_workbook_button.pack(side=tk.LEFT, padx=(0, 20))
-        self.change_workbook_button.config(state='disabled')
 
         self.api_status_label = ttk.Label(status_frame, text="● API: Checking...")
         self.api_status_label.pack(side=tk.LEFT, padx=(0, 20))
@@ -629,18 +680,39 @@ class CurrencyConverterGUI:
     def _build_input_section(self, parent):
         """
         ### MODIFIED ###
-        This section now includes a read-only entry to display the selected range.
+        This section now includes manual range coordinate inputs.
         """
-        frame = ttk.LabelFrame(parent, text="Input Source", padding=10)
+        frame = ttk.LabelFrame(parent, text="Range Selection", padding=10)
         frame.pack(fill=tk.X, pady=5)
-        frame.columnconfigure(1, weight=1)
-
-        self.select_button = ttk.Button(frame, text="Select Range in Excel...", command=self._select_from_excel_interactive)
-        self.select_button.grid(row=0, column=0, padx=5, pady=5, sticky='w')
         
+        # Top section for inputs
+        input_frame = ttk.Frame(frame)
+        input_frame.pack(fill=tk.X, pady=(0, 5))
+        
+        # Left Top coordinate
+        left_frame = ttk.LabelFrame(input_frame, text="Start Cell", padding=5)
+        left_frame.pack(side=tk.LEFT, padx=5)
+        self.start_cell_var = tk.StringVar(value="A1")
+        ttk.Entry(left_frame, textvariable=self.start_cell_var, width=10).pack(side=tk.LEFT, padx=5)
+        
+        # Right Bottom coordinate
+        right_frame = ttk.LabelFrame(input_frame, text="End Cell", padding=5)
+        right_frame.pack(side=tk.LEFT, padx=5)
+        self.end_cell_var = tk.StringVar(value="A1")
+        ttk.Entry(right_frame, textvariable=self.end_cell_var, width=10).pack(side=tk.LEFT, padx=5)
+        
+        # Apply button
+        self.apply_range_button = ttk.Button(input_frame, text="Apply Range", command=self._apply_range)
+        self.apply_range_button.pack(side=tk.LEFT, padx=5)
+        
+        # Range display
+        display_frame = ttk.Frame(frame)
+        display_frame.pack(fill=tk.X, pady=(5, 0))
+        ttk.Label(display_frame, text="Current Range:").pack(side=tk.LEFT, padx=(5, 0))
         self.selection_info_var = tk.StringVar(value="No selection yet.")
-        self.selection_info_entry = ttk.Entry(frame, textvariable=self.selection_info_var, state='readonly', font=('Segoe UI', 9, 'italic'))
-        self.selection_info_entry.grid(row=0, column=1, padx=5, pady=5, sticky='ew')
+        self.selection_info_entry = ttk.Entry(display_frame, textvariable=self.selection_info_var, 
+                                            state='readonly', font=('Segoe UI', 9, 'italic'))
+        self.selection_info_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=5)
 
 
     def _build_options_section(self, parent):
@@ -685,56 +757,66 @@ class CurrencyConverterGUI:
 
     # --- NEW AND MODIFIED METHODS ---
 
-    def _select_from_excel_interactive(self):
+    def _apply_range(self):
         """
-        ### NEW WORKFLOW in v2.0.0 ###
-        Uses Excel's native InputBox to get a range from the user.
+        Applies the manually entered range coordinates.
+        Ensures Excel operations run on the main thread.
         """
-        # Force a connection check before proceeding
-        if not self.converter.excel.connect():
-            messagebox.showerror("Excel Error", "Excel is not connected. Please open Excel and try again.")
-            return
+        def validate_and_get_range():
+            # Get the entered coordinates
+            start_cell = self.start_cell_var.get().strip().upper()
+            end_cell = self.end_cell_var.get().strip().upper()
 
-        try:
-            # Ensure we have an active workbook
-            if not self.converter.excel.book:
-                messagebox.showwarning("No Workbook", "Please open or select a workbook first.")
-                return
+            # Basic validation
+            if not start_cell or not end_cell:
+                raise ValueError("Please enter both start and end cell references")
 
-            # Try to activate Excel before selection
+            # Validate cell references format (e.g., A1, B2)
+            if not all(c.isalnum() for c in start_cell + end_cell):
+                raise ValueError("Invalid cell reference format")
+
+            return start_cell, end_cell
+
+        def apply_range_in_main_thread():
             try:
-                self.converter.excel.app.activate()
-                # Give Excel a moment to come to foreground
-                self.root.after(100)
-                self.root.update()
-            except Exception as e:
-                logger.warning(f"Could not activate Excel window: {e}")
+                # Connect to Excel in main thread
+                if not self.converter.excel.connect():
+                    messagebox.showerror("Excel Error", "Excel is not connected.")
+                    return
 
-            # This call is blocking and will wait for user input in Excel
-            selection = self.converter.excel.get_selection_from_inputbox()
-            
-            if selection:
+                if not self.converter.excel.book:
+                    messagebox.showwarning("No Workbook", "Please select a workbook first.")
+                    return
+
+                # Get and validate range
                 try:
-                    self._process_selection(selection)
-                    self._log("Range selected successfully.", "success")
-                except Exception as e:
-                    messagebox.showerror("Processing Error", 
-                                       f"Selected range is valid but could not be processed.\n\nError: {str(e)}")
-                    self._log(f"Error processing selection: {e}", "error")
-            else:
-                self._log("Range selection was cancelled by the user.", "warning")
+                    start_cell, end_cell = validate_and_get_range()
+                except ValueError as e:
+                    messagebox.showerror("Input Error", str(e))
+                    self._log(str(e), "error")
+                    return
 
-        except ExcelConnectionError as e:
-            messagebox.showerror("Excel Error", str(e))
-            self._log(f"Excel connection error: {e}", "error")
-        except Exception as e:
-            error_msg = str(e)
-            if "com_error" in error_msg.lower():
-                msg = "Lost connection to Excel. Please try again."
-            else:
-                msg = f"Could not get the selection from Excel.\n\nError: {error_msg}"
-            messagebox.showerror("Selection Error", msg)
-            self._log(f"Error during interactive selection: {e}", "error")
+                # Create the range address
+                range_address = f"{start_cell}:{end_cell}" if start_cell != end_cell else start_cell
+
+                # Get the range object without activating Excel
+                try:
+                    active_sheet = self.converter.excel.book.sheets.active
+                    selection = active_sheet.range(range_address)
+                    self._process_selection(selection)
+                    self._log(f"Range {range_address} applied successfully.", "success")
+                except Exception as e:
+                    messagebox.showerror("Range Error", 
+                        f"Could not apply the range {range_address}.\n\nError: {str(e)}")
+                    self._log(f"Error applying range: {e}", "error")
+
+            except Exception as e:
+                messagebox.showerror("Error", 
+                    f"An unexpected error occurred.\n\nError: {str(e)}")
+                self._log(f"Unexpected error: {e}", "error")
+
+        # Schedule the Excel operations to run on the main thread
+        self.root.after(0, apply_range_in_main_thread)
 
     def _process_selection(self, selection: xw.Range):
         """
@@ -789,8 +871,8 @@ class CurrencyConverterGUI:
         self.convert_button.config(state='normal' if self.excel_values else 'disabled')
         
         # Other buttons are enabled based on the general state
-        for widget in [self.refresh_button, self.select_button]:
-            widget.config(state=state)
+        self.refresh_button.config(state=state)
+        self.apply_range_button.config(state=state)
 
     def _periodic_check(self):
         """
@@ -808,14 +890,8 @@ class CurrencyConverterGUI:
                     if self.converter.excel.book:
                         book_name = self.converter.excel.book.name
                     
-                    # Only update button state if needed
-                    def update_button():
-                        current_state = self.change_workbook_button['state']
-                        new_state = 'normal' if excel_ok else 'disabled'
-                        if current_state != new_state:
-                            self.change_workbook_button.config(state=new_state)
-                    
-                    self.root.after(0, update_button)
+                    # Workbook is connected and available
+                    pass
                     
                 except Exception as e:
                     if book_name != "Error getting workbook info":  # Only log state changes
@@ -870,8 +946,24 @@ class CurrencyConverterGUI:
     def _refresh_rates(self):
         def task():
             self._set_ui_state(False)
-            results = self.converter.rate_provider.refresh_all_rates(self._update_progress)
-            self.root.after(0, self._on_refresh_complete, sum(1 for v in results.values() if v), len(results))
+            self.progress_label['text'] = "Starting rates refresh..."
+            self.progress_bar['value'] = 0
+            self.root.update_idletasks()
+            
+            try:
+                results = self.converter.rate_provider.refresh_all_rates(self._update_progress)
+                total_success = sum(1 for v in results.values() if v)
+                self.root.after(0, self._on_refresh_complete, total_success, len(results))
+            except Exception as e:
+                self.root.after(0, lambda: self._log(f"Error refreshing rates: {e}", "error"))
+                self.root.after(0, lambda: self._on_refresh_complete(0, len(CURRENCIES)))
+            
+        # Show immediate feedback
+        self.refresh_button.config(state='disabled')
+        self.progress_label['text'] = "Preparing to refresh rates..."
+        self.root.update_idletasks()
+        
+        # Start the refresh in a background thread
         threading.Thread(target=task, daemon=True).start()
 
     def _on_refresh_complete(self, success_count: int, total: int):
