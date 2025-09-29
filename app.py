@@ -65,14 +65,19 @@ CURRENCIES = sorted([
 ])
 
 COLORS = {
-    'bg_primary': '#f0f4f8',
-    'bg_secondary': '#ffffff',
-    'fg_primary': '#2c3e50',
-    'accent': '#3498db',
-    'success': '#27ae60',
-    'warning': '#f39c12',
-    'error': '#e74c3c',
-    'border': '#dce4ec'
+    'bg_primary': '#f8f9fa',       # Light gray background
+    'bg_secondary': '#ffffff',     # White
+    'fg_primary': '#212529',       # Dark text
+    'accent': '#007bff',           # Blue accent
+    'accent_hover': '#0056b3',     # Darker blue for hover
+    'success': '#28a745',          # Green
+    'warning': '#ffc107',          # Yellow
+    'error': '#dc3545',            # Red
+    'border': '#dee2e6',           # Light border
+    'disabled': '#e9ecef',         # Disabled state
+    'label_bg': '#e9ecef',         # Label background
+    'input_bg': '#ffffff',         # Input background
+    'input_border': '#ced4da'      # Input border
 }
 
 # ================================ LOGGING SETUP ==============================
@@ -488,65 +493,29 @@ class CurrencyConverter:
 
 # ================================ GUI APPLICATION ============================
 
-class WorkbookSelectionDialog(simpledialog.Dialog):
-    """A dialog to allow the user to select from open workbooks or open a new one."""
-    def __init__(self, parent, title, open_workbooks: List[str]):
-        self.open_workbooks = open_workbooks
-        self.result = None
-        self.selection = tk.StringVar()
-        if self.open_workbooks:
-            self.selection.set(self.open_workbooks[0])
-        super().__init__(parent, title)
 
-    def body(self, master):
-        master.pack(padx=10, pady=10)
-        ttk.Label(master, text="Choose an open workbook or open a new file:").pack(pady=(0,10))
-        
-        list_frame = ttk.Frame(master)
-        list_frame.pack(fill=tk.BOTH, expand=True)
-        
-        self.listbox = tk.Listbox(list_frame, selectmode=tk.SINGLE, exportselection=False)
-        for book_name in self.open_workbooks:
-            self.listbox.insert(tk.END, book_name)
-        self.listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        
-        scrollbar = ttk.Scrollbar(list_frame, orient=tk.VERTICAL, command=self.listbox.yview)
-        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-        self.listbox.config(yscrollcommand=scrollbar.set)
-
-        if self.open_workbooks:
-            self.listbox.selection_set(0)
-
-        self.listbox.bind('<<ListboxSelect>>', self.on_select)
-        return self.listbox
-
-    def on_select(self, evt):
-        w = evt.widget
-        if w.curselection():
-            index = int(w.curselection()[0])
-            self.selection.set(w.get(index))
-
-    def buttonbox(self):
-        box = ttk.Frame(self)
-        ttk.Button(box, text="Use Selected", width=15, command=self.ok, default=tk.ACTIVE).pack(side=tk.LEFT, padx=5, pady=5)
-        ttk.Button(box, text="Open File...", width=15, command=self.open_file).pack(side=tk.LEFT, padx=5, pady=5)
-        ttk.Button(box, text="Cancel", width=10, command=self.cancel).pack(side=tk.LEFT, padx=5, pady=5)
-        self.bind("<Return>", self.ok)
-        self.bind("<Escape>", self.cancel)
-        box.pack()
-
-    def ok(self, event=None):
-        if not self.selection.get():
-            messagebox.showwarning("No Selection", "Please select a workbook from the list.", parent=self)
-            return
-        self.result = ("select", self.selection.get())
-        super().ok()
-
-    def open_file(self):
-        self.result = ("open", None)
-        super().ok()
 
 class CurrencyConverterGUI:
+    def _create_tooltip(self, widget, text):
+        def show_tooltip(event):
+            tooltip = tk.Toplevel()
+            tooltip.wm_overrideredirect(True)
+            tooltip.wm_geometry(f"+{event.x_root+10}+{event.y_root+10}")
+            
+            label = ttk.Label(tooltip, text=text, justify=tk.LEFT,
+                             background=COLORS['accent'], foreground=COLORS['bg_secondary'],
+                             relief='solid', borderwidth=1, padding=(5, 3))
+            label.pack()
+            
+            def hide_tooltip():
+                tooltip.destroy()
+            
+            widget.tooltip = tooltip
+            widget.bind('<Leave>', lambda e: hide_tooltip())
+            tooltip.bind('<Leave>', lambda e: hide_tooltip())
+        
+        widget.bind('<Enter>', show_tooltip)
+
     def __init__(self, root: tk.Tk):
         self.root = root
         self.root.title("Excel Currency Converter Pro")
@@ -562,17 +531,71 @@ class CurrencyConverterGUI:
         self.root.after(100, self._periodic_check)
 
     def _setup_styles(self):
-        # This method is unchanged
         style = ttk.Style(self.root)
         style.theme_use('clam')
+        
+        # Configure frame styles
         style.configure('TFrame', background=COLORS['bg_primary'])
-        style.configure('TLabelframe', background=COLORS['bg_primary'], bordercolor=COLORS['border'])
-        style.configure('TLabelframe.Label', background=COLORS['bg_primary'], foreground=COLORS['fg_primary'])
-        style.configure('TLabel', background=COLORS['bg_primary'], foreground=COLORS['fg_primary'])
-        style.configure('TButton', background=COLORS['bg_secondary'], foreground=COLORS['fg_primary'], bordercolor=COLORS['border'])
-        style.map('TButton', background=[('active', COLORS['accent']), ('disabled', COLORS['bg_primary'])])
-        style.configure('Primary.TButton', font=('Segoe UI', 10, 'bold'), background=COLORS['accent'], foreground=COLORS['bg_secondary'])
-        style.map('Primary.TButton', background=[('active', '#2980b9'), ('disabled', COLORS['border'])])
+        style.configure('TLabelframe', 
+            background=COLORS['bg_primary'],
+            bordercolor=COLORS['border'],
+            relief='solid'
+        )
+        style.configure('TLabelframe.Label',
+            background=COLORS['bg_primary'],
+            foreground=COLORS['fg_primary'],
+            font=('Segoe UI', 9, 'bold')
+        )
+        
+        # Configure label styles
+        style.configure('TLabel',
+            background=COLORS['bg_primary'],
+            foreground=COLORS['fg_primary'],
+            font=('Segoe UI', 9)
+        )
+        
+        # Configure button styles
+        style.configure('TButton',
+            background=COLORS['accent'],
+            foreground=COLORS['bg_secondary'],
+            bordercolor=COLORS['border'],
+            font=('Segoe UI', 9),
+            padding=5
+        )
+        style.map('TButton',
+            background=[('active', COLORS['accent_hover']), 
+                       ('disabled', COLORS['disabled'])],
+            foreground=[('disabled', COLORS['fg_primary'])]
+        )
+        
+        # Configure primary button style
+        style.configure('Primary.TButton',
+            font=('Segoe UI', 10, 'bold'),
+            padding=8
+        )
+        
+        # Configure entry style
+        style.configure('TEntry',
+            fieldbackground=COLORS['input_bg'],
+            bordercolor=COLORS['input_border'],
+            padding=5
+        )
+        
+        # Configure combobox style
+        style.configure('TCombobox',
+            background=COLORS['input_bg'],
+            fieldbackground=COLORS['input_bg'],
+            selectbackground=COLORS['accent'],
+            selectforeground=COLORS['bg_secondary'],
+            padding=5
+        )
+        
+        # Configure spinbox style
+        style.configure('TSpinbox',
+            background=COLORS['input_bg'],
+            fieldbackground=COLORS['input_bg'],
+            padding=5
+        )
 
     def _build_gui(self):
         main_frame = ttk.Frame(self.root, padding="15 15 15 15")
@@ -594,142 +617,144 @@ class CurrencyConverterGUI:
         self.api_status_label = ttk.Label(status_frame, text="● API: Checking...")
         self.api_status_label.pack(side=tk.LEFT, padx=(0, 20))
         
-    def _change_workbook(self):
-        """
-        ### NEW METHOD IN v2.0.0 ###
-        Opens a dialog to let the user select from open workbooks or open a new file.
-        """
-        # Force a fresh connection attempt
-        if not self.converter.excel.connect():
-            messagebox.showerror("Excel Error", "Excel is not connected. Please open Excel and try again.")
-            return
 
-        open_workbooks = self.converter.excel.list_open_workbooks()
-        if not open_workbooks:
-            if messagebox.askyesno("No Workbooks", "No open workbooks found. Would you like to open a new workbook?"):
-                self._open_new_workbook()
-            return
-
-        dialog = WorkbookSelectionDialog(self.root, "Select Workbook", open_workbooks)
-        if not dialog.result:
-            return  # User cancelled
-
-        action, selection = dialog.result
-        success = False
-        
-        if action == "select":
-            # Ensure Excel is still connected
-            if not self.converter.excel.connect():
-                messagebox.showerror("Excel Error", "Lost connection to Excel. Please try again.")
-                return
-
-            success = self.converter.excel.set_active_workbook(selection)
-            if success:
-                self._log(f"Switched to workbook: {selection}", "success")
-                # Clear any existing selection
-                self.current_selection = None
-                self.excel_values = None
-                self.selection_info_var.set("No selection yet.")
-            else:
-                self._log(f"Failed to switch to workbook: {selection}", "error")
-        elif action == "open":
-            self._open_new_workbook()
-        
-        # Force a connection check to update the status
-        self._periodic_check()
-
-    def _open_new_workbook(self):
-        """Helper method to handle opening a new workbook."""
-        from tkinter import filedialog
-        file_path = filedialog.askopenfilename(
-            title="Open Excel Workbook",
-            filetypes=[
-                ("Excel files", "*.xlsx;*.xlsm;*.xls"),
-                ("All files", "*.*")
-            ]
-        )
-        if file_path:
-            # Ensure Excel is still connected
-            if not self.converter.excel.connect():
-                messagebox.showerror("Excel Error", "Lost connection to Excel. Please try again.")
-                return
-
-            book = self.converter.excel.open_workbook(file_path)
-            if book:
-                self._log(f"Opened workbook: {book.name}", "success")
-                # Clear any existing selection
-                self.current_selection = None
-                self.excel_values = None
-                self.selection_info_var.set("No selection yet.")
-            else:
-                self._log(f"Failed to open workbook: {file_path}", "error")
 
     def _build_currency_section(self, parent):
-        frame = ttk.LabelFrame(parent, text="Currency Settings", padding=10)
-        frame.pack(fill=tk.X, pady=5)
-        ttk.Label(frame, text="From:").grid(row=0, column=0, padx=5, pady=5, sticky='w')
+        frame = ttk.LabelFrame(parent, text="Currency Settings", padding=15)
+        frame.pack(fill=tk.X, pady=10)
+        
+        # Use grid layout with proper spacing
+        frame.columnconfigure(5, weight=1)  # Make the last column expandable
+        
+        # From Currency
+        ttk.Label(frame, text="💱 From:", font=('Segoe UI', 9, 'bold')).grid(
+            row=0, column=0, padx=(0, 5), pady=5, sticky='w')
         self.from_currency_var = tk.StringVar(value="USD")
-        ttk.Combobox(frame, textvariable=self.from_currency_var, values=CURRENCIES, state='readonly', width=10).grid(row=0, column=1)
-        ttk.Label(frame, text="To:").grid(row=0, column=2, padx=(20, 5), pady=5, sticky='w')
+        from_combo = ttk.Combobox(frame, textvariable=self.from_currency_var, 
+                                 values=CURRENCIES, state='readonly', width=10)
+        from_combo.grid(row=0, column=1, padx=5, pady=5)
+        
+        # To Currency
+        ttk.Label(frame, text="💲 To:", font=('Segoe UI', 9, 'bold')).grid(
+            row=0, column=2, padx=(20, 5), pady=5, sticky='w')
         self.to_currency_var = tk.StringVar(value="EUR")
-        ttk.Combobox(frame, textvariable=self.to_currency_var, values=CURRENCIES, state='readonly', width=10).grid(row=0, column=3)
-        ttk.Label(frame, text="Decimals:").grid(row=0, column=4, padx=(20, 5), pady=5, sticky='w')
+        to_combo = ttk.Combobox(frame, textvariable=self.to_currency_var, 
+                               values=CURRENCIES, state='readonly', width=10)
+        to_combo.grid(row=0, column=3, padx=5, pady=5)
+        
+        # Decimals
+        ttk.Label(frame, text="📂 Decimals:", font=('Segoe UI', 9, 'bold')).grid(
+            row=0, column=4, padx=(20, 5), pady=5, sticky='w')
         self.precision_var = tk.IntVar(value=2)
-        ttk.Spinbox(frame, from_=0, to=10, textvariable=self.precision_var, width=5).grid(row=0, column=5)
+        spinbox = ttk.Spinbox(frame, from_=0, to=10, textvariable=self.precision_var, width=5)
+        spinbox.grid(row=0, column=5, padx=5, pady=5)
+        
+        # Add tooltips
+        self._create_tooltip(from_combo, "Select the currency to convert from")
+        self._create_tooltip(to_combo, "Select the currency to convert to")
+        self._create_tooltip(spinbox, "Number of decimal places in the result")
 
     def _build_input_section(self, parent):
-        """
-        ### MODIFIED ###
-        This section now includes manual range coordinate inputs.
-        """
-        frame = ttk.LabelFrame(parent, text="Range Selection", padding=10)
-        frame.pack(fill=tk.X, pady=5)
+        """Enhanced input section with better visual layout"""
+        frame = ttk.LabelFrame(parent, text="Excel Range Selection", padding=15)
+        frame.pack(fill=tk.X, pady=10)
         
-        # Top section for inputs
+        # Create a grid layout for better organization
+        frame.columnconfigure(1, weight=1)  # Make the second column expandable
+        
+        # Top section with cell inputs
         input_frame = ttk.Frame(frame)
-        input_frame.pack(fill=tk.X, pady=(0, 5))
+        input_frame.grid(row=0, column=0, columnspan=2, sticky='ew', pady=(0, 10))
+        input_frame.columnconfigure(4, weight=1)  # Make the button area expandable
         
-        # Left Top coordinate
-        left_frame = ttk.LabelFrame(input_frame, text="Start Cell", padding=5)
-        left_frame.pack(side=tk.LEFT, padx=5)
+        # Start Cell input with icon or symbol
+        ttk.Label(input_frame, text="📍 Start:", font=('Segoe UI', 9, 'bold')).grid(row=0, column=0, padx=(0, 5))
         self.start_cell_var = tk.StringVar(value="A1")
-        ttk.Entry(left_frame, textvariable=self.start_cell_var, width=10).pack(side=tk.LEFT, padx=5)
+        start_entry = ttk.Entry(input_frame, textvariable=self.start_cell_var, width=12)
+        start_entry.grid(row=0, column=1, padx=5)
         
-        # Right Bottom coordinate
-        right_frame = ttk.LabelFrame(input_frame, text="End Cell", padding=5)
-        right_frame.pack(side=tk.LEFT, padx=5)
+        # End Cell input with icon or symbol
+        ttk.Label(input_frame, text="🎯 End:", font=('Segoe UI', 9, 'bold')).grid(row=0, column=2, padx=(15, 5))
         self.end_cell_var = tk.StringVar(value="A1")
-        ttk.Entry(right_frame, textvariable=self.end_cell_var, width=10).pack(side=tk.LEFT, padx=5)
+        end_entry = ttk.Entry(input_frame, textvariable=self.end_cell_var, width=12)
+        end_entry.grid(row=0, column=3, padx=5)
         
-        # Apply button
-        self.apply_range_button = ttk.Button(input_frame, text="Apply Range", command=self._apply_range)
-        self.apply_range_button.pack(side=tk.LEFT, padx=5)
+        # Apply button with icon
+        self.apply_range_button = ttk.Button(input_frame, text="✓ Apply Range", command=self._apply_range)
+        self.apply_range_button.grid(row=0, column=4, padx=(15, 0), sticky='e')
         
-        # Range display
-        display_frame = ttk.Frame(frame)
-        display_frame.pack(fill=tk.X, pady=(5, 0))
-        ttk.Label(display_frame, text="Current Range:").pack(side=tk.LEFT, padx=(5, 0))
-        self.selection_info_var = tk.StringVar(value="No selection yet.")
-        self.selection_info_entry = ttk.Entry(display_frame, textvariable=self.selection_info_var, 
-                                            state='readonly', font=('Segoe UI', 9, 'italic'))
-        self.selection_info_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=5)
+        # Separator for visual division
+        ttk.Separator(frame, orient='horizontal').grid(row=1, column=0, columnspan=2, sticky='ew', pady=10)
+        
+        # Range display section
+        status_frame = ttk.Frame(frame)
+        status_frame.grid(row=2, column=0, columnspan=2, sticky='ew')
+        status_frame.columnconfigure(1, weight=1)
+        
+        # Status icon and label
+        ttk.Label(status_frame, text="📊 Current Selection:", 
+                 font=('Segoe UI', 9, 'bold')).grid(row=0, column=0, padx=(0, 10), sticky='w')
+        
+        # Range display with better styling
+        self.selection_info_var = tk.StringVar(value="No range selected")
+        self.selection_info_entry = ttk.Entry(status_frame, 
+                                             textvariable=self.selection_info_var,
+                                             state='readonly',
+                                             font=('Segoe UI', 9))
+        self.selection_info_entry.grid(row=0, column=1, sticky='ew', padx=(0, 5))
+        
+        # Add tooltips
+        self._create_tooltip(start_entry, "Enter the top-left cell of your range (e.g., A1)")
+        self._create_tooltip(end_entry, "Enter the bottom-right cell of your range (e.g., B5)")
+        self._create_tooltip(self.apply_range_button, "Click to apply the selected range")
 
 
     def _build_options_section(self, parent):
         # Options section removed as we only have one output mode
         self.output_mode_var = tk.StringVar(value=OutputMode.OVERWRITE.value)
 
-    def _build_action_section(self, parent): # Unchanged
-        frame = ttk.Frame(parent, padding=(0, 10))
-        frame.pack(fill=tk.X, pady=5)
-        self.convert_button = ttk.Button(frame, text="Convert", command=self._convert, style='Primary.TButton')
-        self.convert_button.pack(side=tk.LEFT, padx=(0, 10))
-        self.refresh_button = ttk.Button(frame, text="Refresh Rates", command=self._refresh_rates)
-        self.refresh_button.pack(side=tk.LEFT, padx=(0, 10))
-        self.log_button = ttk.Button(frame, text="Open Log File", command=self._open_log_file)
-        self.log_button.pack(side=tk.RIGHT)
-        self.clear_log_button = ttk.Button(frame, text="Clear Log", command=self._clear_log)
-        self.clear_log_button.pack(side=tk.RIGHT, padx=(0, 10))
+    def _build_action_section(self, parent):
+        frame = ttk.LabelFrame(parent, text="Actions", padding=15)
+        frame.pack(fill=tk.X, pady=10)
+        
+        button_frame = ttk.Frame(frame)
+        button_frame.pack(fill=tk.X)
+        button_frame.columnconfigure(1, weight=1)  # Add space between left and right buttons
+        
+        # Left side buttons - main actions
+        left_frame = ttk.Frame(button_frame)
+        left_frame.grid(row=0, column=0, sticky='w')
+        
+        self.convert_button = ttk.Button(left_frame, 
+                                        text="💱 Convert", 
+                                        command=self._convert, 
+                                        style='Primary.TButton')
+        self.convert_button.pack(side=tk.LEFT, padx=5)
+        
+        self.refresh_button = ttk.Button(left_frame, 
+                                        text="🔄 Refresh Rates", 
+                                        command=self._refresh_rates)
+        self.refresh_button.pack(side=tk.LEFT, padx=5)
+        
+        # Right side buttons - log actions
+        right_frame = ttk.Frame(button_frame)
+        right_frame.grid(row=0, column=2, sticky='e')
+        
+        self.clear_log_button = ttk.Button(right_frame, 
+                                          text="🗑 Clear Log", 
+                                          command=self._clear_log)
+        self.clear_log_button.pack(side=tk.RIGHT, padx=5)
+        
+        self.log_button = ttk.Button(right_frame, 
+                                    text="📄 Open Log", 
+                                    command=self._open_log_file)
+        self.log_button.pack(side=tk.RIGHT, padx=5)
+        
+        # Add tooltips
+        self._create_tooltip(self.convert_button, "Convert the selected range using current settings")
+        self._create_tooltip(self.refresh_button, "Update currency exchange rates from the server")
+        self._create_tooltip(self.clear_log_button, "Clear the activity log below")
+        self._create_tooltip(self.log_button, "Open the full log file in your default text editor")
 
     def _build_progress_section(self, parent): # Unchanged
         frame = ttk.Frame(parent)
@@ -867,10 +892,8 @@ class CurrencyConverterGUI:
 
     def _set_ui_state(self, enabled: bool):
         state = 'normal' if enabled else 'disabled'
-        # Convert button is only enabled if a selection has been made
-        self.convert_button.config(state='normal' if self.excel_values else 'disabled')
-        
-        # Other buttons are enabled based on the general state
+        # Configure buttons based on state
+        self.convert_button.config(state='normal' if enabled and self.excel_values else 'disabled')
         self.refresh_button.config(state=state)
         self.apply_range_button.config(state=state)
 
@@ -886,16 +909,9 @@ class CurrencyConverterGUI:
             
             if excel_ok:
                 try:
-                    # Get current workbook name
-                    if self.converter.excel.book:
-                        book_name = self.converter.excel.book.name
-                    
-                    # Workbook is connected and available
-                    pass
-                    
+                    book_name = self.converter.excel.book.name if self.converter.excel.book else "No active workbook"
                 except Exception as e:
-                    if book_name != "Error getting workbook info":  # Only log state changes
-                        logger.warning(f"Error getting Excel details: {e}")
+                    logger.warning(f"Error getting Excel details: {e}")
                     book_name = "Error getting workbook info"
                     excel_ok = False
             else:
@@ -1024,13 +1040,6 @@ class CurrencyConverterGUI:
             # Get output mode
             output_mode = OutputMode(self.output_mode_var.get())
             
-            # Try to activate Excel
-            try:
-                if self.converter.excel.app:
-                    self.converter.excel.app.activate()
-            except:
-                pass
-
             # Write the values
             self.converter.excel.write_values(self.current_selection, converted_data, output_mode)
             self._on_convert_complete(stats, True, None)
