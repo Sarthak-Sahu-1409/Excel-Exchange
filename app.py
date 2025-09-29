@@ -101,12 +101,9 @@ class ConversionRequest:
     from_currency: str
     to_currency: str
     precision: int = 2
-    add_suffix: bool = False
 
 class OutputMode(Enum):
     OVERWRITE = "Overwrite selected cells"
-    ADJACENT_COLUMN = "Write to adjacent column"
-    NEW_SHEET = "Create new sheet"
 
 # ================================ EXCEPTIONS =================================
 class CurrencyConverterError(Exception): pass
@@ -389,25 +386,11 @@ class XLWingsExcelInterface(ExcelInterface):
     def write_values(self, selection: xw.Range, values: List[List[Any]], mode: OutputMode) -> None:
         """Write values to Excel. This should be called from the main thread."""
         try:
-            # Get the target range based on the output mode
-            target_range = None
-            if mode == OutputMode.OVERWRITE:
-                target_range = selection
-            elif mode == OutputMode.ADJACENT_COLUMN:
-                target_range = selection.offset(column_offset=selection.shape[1])
-            elif mode == OutputMode.NEW_SHEET:
-                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-                new_sheet = self.book.sheets.add(f"Converted_{timestamp}", after=self.book.active_sheet)
-                target_range = new_sheet.range('A1')
-            
-            if not target_range:
-                raise ValueError("No target range available for writing")
-
-            # Write the values
-            target_range.options(expand='table').value = values
+            # In simplified version, we only overwrite the selected range
+            selection.options(expand='table').value = values
             
             # Log success
-            logger.info(f"Successfully wrote values to {target_range.address} in {target_range.sheet.name}")
+            logger.info(f"Successfully wrote values to {selection.address} in {selection.sheet.name}")
             
         except Exception as e:
             logger.error(f"Error writing values to Excel: {e}")
@@ -425,8 +408,6 @@ class CurrencyConverter:
         try:
             rate, source = self.rate_provider.get_rate(request.from_currency, request.to_currency)
             converted = float(value) * rate
-            if request.add_suffix:
-                return f"{converted:,.{request.precision}f} {request.to_currency}", f"converted ({source})"
             return round(converted, request.precision), f"converted ({source})"
         except (ValueError, TypeError):
             return value, "skipped (non-numeric)"
@@ -632,7 +613,7 @@ class CurrencyConverterGUI:
             else:
                 self._log(f"Failed to open workbook: {file_path}", "error")
 
-    def _build_currency_section(self, parent): # Unchanged
+    def _build_currency_section(self, parent):
         frame = ttk.LabelFrame(parent, text="Currency Settings", padding=10)
         frame.pack(fill=tk.X, pady=5)
         ttk.Label(frame, text="From:").grid(row=0, column=0, padx=5, pady=5, sticky='w')
@@ -644,8 +625,6 @@ class CurrencyConverterGUI:
         ttk.Label(frame, text="Decimals:").grid(row=0, column=4, padx=(20, 5), pady=5, sticky='w')
         self.precision_var = tk.IntVar(value=2)
         ttk.Spinbox(frame, from_=0, to=10, textvariable=self.precision_var, width=5).grid(row=0, column=5)
-        self.add_suffix_var = tk.BooleanVar(value=False)
-        ttk.Checkbutton(frame, text="Add currency suffix (e.g., '123.45 EUR')", variable=self.add_suffix_var).grid(row=1, columnspan=6, sticky='w', pady=5)
 
     def _build_input_section(self, parent):
         """
@@ -664,12 +643,9 @@ class CurrencyConverterGUI:
         self.selection_info_entry.grid(row=0, column=1, padx=5, pady=5, sticky='ew')
 
 
-    def _build_options_section(self, parent): # Unchanged
-        frame = ttk.LabelFrame(parent, text="Excel Output Mode", padding=10)
-        frame.pack(fill=tk.X, pady=5)
+    def _build_options_section(self, parent):
+        # Options section removed as we only have one output mode
         self.output_mode_var = tk.StringVar(value=OutputMode.OVERWRITE.value)
-        for mode in OutputMode:
-            ttk.Radiobutton(frame, text=mode.value, variable=self.output_mode_var, value=mode.value).pack(anchor='w')
 
     def _build_action_section(self, parent): # Unchanged
         frame = ttk.Frame(parent, padding=(0, 10))
